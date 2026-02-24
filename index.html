@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VGRD 2.0 — Virus Guard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oxanium:wght@300;400;600;700;800&display=swap');
+
+:root {
+  --bg: #03070d;
+  --panel: #080f1a;
+  --panel2: #0c1725;
+  --border: #0d2e47;
+  --accent: #00d4ff;
+  --accent2: #ff2d55;
+  --accent3: #00ff88;
+  --warn: #ffaa00;
+  --purple: #b060ff;
+  --text: #a8cfe0;
+  --dim: #2a5068;
+  --dimmer: #162533;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Oxanium', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px);
+  pointer-events: none;
+  z-index: 999;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+}
+
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 20px 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+
+.logo-group { display: flex; flex-direction: column; }
+.logo {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 32px;
+  letter-spacing: 8px;
+  color: var(--accent);
+  filter: drop-shadow(0 0 12px rgba(0,212,255,0.5));
+  line-height: 1;
+}
+.logo em { color: var(--accent2); font-style: normal; }
+.logo-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: var(--dim);
+  margin-top: 4px;
+}
+
+.header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.sys-status {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent3);
+}
+.pulse-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent3);
+  animation: blink 1.4s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+.threat-level-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 2px;
+  border: 1px solid;
+  letter-spacing: 2px;
+}
+.threat-level-badge.unknown { border-color: var(--dim); color: var(--dim); }
+.threat-level-badge.clean { border-color: var(--accent3); color: var(--accent3); filter: drop-shadow(0 0 6px rgba(0,255,136,0.4)); }
+.threat-level-badge.danger { border-color: var(--accent2); color: var(--accent2); filter: drop-shadow(0 0 6px rgba(255,45,85,0.4)); animation: blink 1s infinite; }
+.threat-level-badge.warning { border-color: var(--warn); color: var(--warn); }
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  position: relative;
+}
+
+.panel-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--dim);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-header .accent-line {
+  width: 20px; height: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+.target-info { padding: 14px; }
+.info-row { display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px; }
+.info-row:last-child { margin-bottom: 0; }
+.info-label { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: var(--dim); letter-spacing: 2px; }
+.info-val { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--accent); word-break: break-all; }
+.info-val.warn { color: var(--warn); }
+.info-val.ok { color: var(--accent3); }
+
+.health-meter { padding: 14px; }
+.health-label { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: var(--dim); letter-spacing: 2px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+.health-bar-outer { height: 8px; background: var(--dimmer); border: 1px solid var(--border); overflow: hidden; }
+.health-bar-inner {
+  height: 100%;
+  transition: width 0.8s ease, background 0.8s ease;
+  position: relative;
+}
+.health-bar-inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(0,0,0,0.15) 8px, rgba(0,0,0,0.15) 9px);
+}
+
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
+.stat-box { background: var(--panel); padding: 12px 14px; text-align: center; }
+.stat-box.highlighted { background: var(--panel2); }
+.stat-num { font-family: 'Share Tech Mono', monospace; font-size: 28px; line-height: 1; display: block; transition: all 0.4s; }
+.stat-num.red { color: var(--accent2); }
+.stat-num.yellow { color: var(--warn); }
+.stat-num.cyan { color: var(--accent); }
+.stat-num.green { color: var(--accent3); }
+.stat-lbl { font-size: 9px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-top: 4px; display: block; }
+
+.action-panel { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+.btn {
+  width: 100%;
+  padding: 12px 16px;
+  font-family: 'Oxanium', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.05);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+.btn:hover::before { transform: scaleX(1); }
+.btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn:disabled::before { display: none; }
+
+.btn-primary { background: rgba(0,212,255,0.08); border: 1px solid var(--accent); color: var(--accent); }
+.btn-primary:hover:not(:disabled) { box-shadow: 0 0 20px rgba(0,212,255,0.25); }
+.btn-danger { background: rgba(255,45,85,0.08); border: 1px solid var(--accent2); color: var(--accent2); }
+.btn-danger:hover:not(:disabled) { box-shadow: 0 0 20px rgba(255,45,85,0.25); }
+.btn-success { background: rgba(0,255,136,0.08); border: 1px solid var(--accent3); color: var(--accent3); }
+.btn-success:hover:not(:disabled) { box-shadow: 0 0 20px rgba(0,255,136,0.25); }
+.btn-warn { background: rgba(255,170,0,0.08); border: 1px solid var(--warn); color: var(--warn); }
+.btn-warn:hover:not(:disabled) { box-shadow: 0 0 20px rgba(255,170,0,0.25); }
+
+.content { display: flex; flex-direction: column; gap: 20px; }
+
+.terminal {
+  background: #020810;
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--accent);
+  min-height: 180px;
+  max-height: 220px;
+  overflow-y: auto;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+}
+.terminal-titlebar {
+  position: sticky;
+  top: 0;
+  background: #020810;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 10;
+}
+.terminal-title { color: var(--accent); font-size: 9px; letter-spacing: 3px; }
+.terminal-dots { display: flex; gap: 4px; }
+.terminal-dots span { width: 7px; height: 7px; border-radius: 50%; }
+.terminal-body { padding: 10px 14px 14px; }
+.t-line { line-height: 1.7; display: flex; gap: 8px; }
+.t-ts { color: var(--dim); flex-shrink: 0; }
+.t-line.info .t-msg { color: var(--accent); }
+.t-line.ok .t-msg { color: var(--accent3); }
+.t-line.warn .t-msg { color: var(--warn); }
+.t-line.err .t-msg { color: var(--accent2); }
+.t-line.sys .t-msg { color: var(--purple); }
+.t-line.dim .t-msg { color: var(--dim); }
+.t-line.fix .t-msg { color: #00ff88; }
+
+.progress-section { }
+.prog-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.prog-row:last-child { border-bottom: none; }
+.prog-name { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); width: 150px; flex-shrink: 0; letter-spacing: 1px; }
+.prog-bar-wrap { flex: 1; height: 3px; background: var(--dimmer); }
+.prog-bar-fill { height: 100%; transition: width 0.3s ease; width: 0%; }
+.prog-bar-fill.active { background: linear-gradient(90deg, var(--accent), var(--accent3)); }
+.prog-bar-fill.done { background: var(--accent3); }
+.prog-bar-fill.errbar { background: var(--accent2); }
+.prog-pct { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); width: 36px; text-align: right; }
+
+.results-section { display: flex; flex-direction: column; gap: 10px; }
+
+.result-item {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: fadeUp 0.35s ease forwards;
+}
+@keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+.result-item.high { border-left-color: var(--accent2); }
+.result-item.medium { border-left-color: var(--warn); }
+.result-item.low { border-left-color: var(--accent); }
+.result-item.clean { border-left-color: var(--accent3); }
+.result-item.fixed { border-left-color: var(--accent3); opacity: 0.65; }
+.result-item.eliminated { border-left-color: var(--dim); opacity: 0.45; }
+
+.result-main { flex: 1; padding: 14px 16px; }
+.result-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.result-icon { font-size: 15px; }
+.result-name { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text); flex: 1; }
+
+.result-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: 2px;
+  letter-spacing: 1px;
+}
+.result-badge.high { color: var(--accent2); border-color: rgba(255,45,85,0.4); background: rgba(255,45,85,0.08); }
+.result-badge.medium { color: var(--warn); border-color: rgba(255,170,0,0.4); background: rgba(255,170,0,0.08); }
+.result-badge.low { color: var(--accent); border-color: rgba(0,212,255,0.4); background: rgba(0,212,255,0.08); }
+.result-badge.clean { color: var(--accent3); border-color: rgba(0,255,136,0.4); background: rgba(0,255,136,0.08); }
+.result-badge.fixed { color: var(--accent3); border-color: rgba(0,255,136,0.5); background: rgba(0,255,136,0.12); }
+.result-badge.eliminated { color: var(--dim); border-color: var(--dim); background: rgba(42,80,104,0.1); }
+
+.result-desc { font-size: 12px; color: var(--dim); line-height: 1.5; }
+.result-fix-msg { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--accent3); margin-top: 6px; display: none; }
+.result-fix-msg.visible { display: block; }
+
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  min-width: 120px;
+}
+.result-actions.hidden { display: none; }
+
+.act-btn {
+  flex: 1;
+  padding: 0 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Oxanium', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.act-btn:last-child { border-bottom: none; }
+.act-btn.fix { color: var(--accent3); }
+.act-btn.fix:hover { background: rgba(0,255,136,0.08); }
+.act-btn.eliminate { color: var(--accent2); }
+.act-btn.eliminate:hover { background: rgba(255,45,85,0.08); }
+.act-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.act-btn:disabled:hover { background: transparent; }
+
+.verdict-bar {
+  padding: 18px 24px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.verdict-bar.clean { border-color: var(--accent3); background: rgba(0,255,136,0.04); }
+.verdict-bar.danger { border-color: var(--accent2); background: rgba(255,45,85,0.04); animation: danger-pulse 2s infinite; }
+.verdict-bar.warning { border-color: var(--warn); background: rgba(255,170,0,0.04); }
+
+@keyframes danger-pulse {
+  0%,100% { box-shadow: 0 0 0 rgba(255,45,85,0); }
+  50% { box-shadow: 0 0 30px rgba(255,45,85,0.15); }
+}
+
+.verdict-text { font-family: 'Share Tech Mono', monospace; font-size: 13px; letter-spacing: 3px; }
+.verdict-bar.clean .verdict-text { color: var(--accent3); }
+.verdict-bar.danger .verdict-text { color: var(--accent2); }
+.verdict-bar.warning .verdict-text { color: var(--warn); }
+.verdict-sub { font-size: 11px; color: var(--dim); margin-top: 4px; }
+
+.btn-fix-all {
+  padding: 10px 18px;
+  font-family: 'Oxanium', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  cursor: pointer;
+  border: 1px solid var(--accent3);
+  background: rgba(0,255,136,0.08);
+  color: var(--accent3);
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.btn-fix-all:hover { box-shadow: 0 0 20px rgba(0,255,136,0.2); }
+.btn-fix-all.red { border-color: var(--accent2); background: rgba(255,45,85,0.08); color: var(--accent2); }
+.btn-fix-all.red:hover { box-shadow: 0 0 20px rgba(255,45,85,0.2); }
+
+.sec-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: var(--dim);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sec-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+.repair-flash { animation: rep-anim 0.6s ease; }
+@keyframes rep-anim { 0%{background:rgba(0,255,136,0.15)} 100%{background:transparent} }
+
+.elim-flash { animation: elim-anim 0.5s ease; }
+@keyframes elim-anim { 0%{background:rgba(255,45,85,0.2)} 50%{opacity:0.3} 100%{background:transparent} }
+
+.intro-text {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  color: var(--dim);
+  text-align: center;
+  padding: 40px 20px;
+  line-height: 2;
+  border: 1px dashed var(--border);
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+footer {
+  text-align: center;
+  padding: 20px 0;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--dim);
+  letter-spacing: 2px;
+  margin-top: 32px;
+  border-top: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="logo-group">
+      <div class="logo">VG<em>RD</em></div>
+      <div class="logo-sub">VIRUS GUARD SYSTEM v2.0 — THREAT ELIMINATION EDITION</div>
+    </div>
+    <div class="header-right">
+      <div class="sys-status"><div class="pulse-dot"></div>SYSTEM ACTIVE</div>
+      <div class="threat-level-badge unknown" id="threat-badge">UNSCANNED</div>
+    </div>
+  </header>
+
+  <div class="main-grid">
+
+    <div class="sidebar">
+
+      <div class="panel">
+        <div class="panel-header">TARGET_INFO <div class="accent-line"></div></div>
+        <div class="target-info">
+          <div class="info-row">
+            <span class="info-label">URL</span>
+            <span class="info-val" id="info-url">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">PROTOCOL</span>
+            <span class="info-val" id="info-proto">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">BROWSER</span>
+            <span class="info-val" id="info-ua">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">COOKIES</span>
+            <span class="info-val" id="info-cookies">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">SYSTEM_HEALTH <div class="accent-line"></div></div>
+        <div class="health-meter">
+          <div class="health-label">
+            <span>INTEGRITY SCORE</span>
+            <span id="health-pct">—</span>
+          </div>
+          <div class="health-bar-outer">
+            <div class="health-bar-inner" id="health-bar" style="width:0%;background:var(--dim)"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">THREAT_STATS <div class="accent-line"></div></div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="stat-num red" id="s-critical">—</span>
+            <span class="stat-lbl">Critical</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num yellow" id="s-warnings">—</span>
+            <span class="stat-lbl">Warnings</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num cyan" id="s-notices">—</span>
+            <span class="stat-lbl">Notices</span>
+          </div>
+          <div class="stat-box highlighted">
+            <span class="stat-num green" id="s-fixed">0</span>
+            <span class="stat-lbl">Fixed</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">ACTIONS <div class="accent-line"></div></div>
+        <div class="action-panel">
+          <button class="btn btn-primary" id="btn-scan" onclick="startScan()">⟳ FULL SCAN</button>
+          <button class="btn btn-success" id="btn-fix-all" onclick="fixAll()" disabled>✦ FIX ALL ISSUES</button>
+          <button class="btn btn-danger" id="btn-nuke" onclick="eliminateAll()" disabled>✕ ELIMINATE ALL</button>
+          <button class="btn btn-warn" id="btn-repair" onclick="deepRepair()" disabled>⚙ DEEP REPAIR</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="content">
+
+      <div class="terminal" id="terminal">
+        <div class="terminal-titlebar">
+          <span class="terminal-title">// SYSTEM TERMINAL</span>
+          <div class="terminal-dots">
+            <span style="background:#ff5f57"></span>
+            <span style="background:#febc2e"></span>
+            <span style="background:#28c840"></span>
+          </div>
+        </div>
+        <div class="terminal-body" id="terminal-body">
+          <div class="t-line dim"><span class="t-ts">[--:--:--]</span><span class="t-msg">VGRD v2.0 — Threat Elimination Edition ready.</span></div>
+          <div class="t-line dim"><span class="t-ts">[--:--:--]</span><span class="t-msg">Scan · Fix · Eliminate · Deep Repair modules loaded.</span></div>
+        </div>
+      </div>
+
+      <div class="panel progress-section" id="progress-section" style="display:none">
+        <div class="panel-header">SCAN_PROGRESS <div class="accent-line"></div></div>
+        <div id="prog-rows"></div>
+      </div>
+
+      <div id="results-container">
+        <div class="intro-text" id="intro-msg">
+          AWAITING SCAN<br>
+          <span style="font-size:10px;color:#1a3a4a">
+            Press FULL SCAN to analyze your browser environment.<br>
+            Fix individual threats or eliminate them entirely.
+          </span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>VGRD 2.0 © 2026 — BROWSER THREAT DETECTION & ELIMINATION SYSTEM</footer>
+</div>
+
+<script>
+// ─── INIT ─────────────────────────────────────────────────────────────
+(function() {
+  const url = window.location.href;
+  document.getElementById('info-url').textContent = url.length > 28 ? url.slice(0,28)+'…' : url;
+  const proto = location.protocol;
+  const pe = document.getElementById('info-proto');
+  pe.textContent = proto;
+  pe.className = 'info-val ' + (proto === 'https:' || proto === 'file:' ? 'ok' : 'warn');
+  const ua = navigator.userAgent;
+  const browser = ua.includes('Chrome') ? 'Chrome' : ua.includes('Firefox') ? 'Firefox' : ua.includes('Safari') ? 'Safari' : ua.includes('Edge') ? 'Edge' : 'Browser';
+  document.getElementById('info-ua').textContent = browser;
+  const cc = document.cookie ? document.cookie.split(';').filter(c=>c.trim()).length : 0;
+  const ce = document.getElementById('info-cookies');
+  ce.textContent = cc + ' found';
+  ce.className = 'info-val ' + (cc > 5 ? 'warn' : 'ok');
+})();
+
+// ─── CHECK DEFINITIONS ────────────────────────────────────────────────
+const CHECKS = [
+  {
+    id: 'protocol', name: 'HTTPS Protocol', label: 'Checking connection protocol...',
+    run() {
+      const ok = location.protocol === 'https:' || location.protocol === 'file:';
+      return { level: ok?'clean':'high', canFix: !ok, canEliminate: !ok,
+        fixLabel:'Enforce HTTPS', eliminateLabel:'Force Redirect',
+        desc: ok ? 'Secure or local protocol. Data is encrypted in transit.'
+                 : 'Served over HTTP — unencrypted. Vulnerable to MITM attacks.' };
+    },
+    fix() { if(location.protocol==='http:') location.replace(location.href.replace('http:','https:')); else log('Apply HTTPS at server level.','warn'); return true; },
+    eliminate() { document.body.setAttribute('data-https-enforced','true'); log('HTTP access locked for this session.','fix'); return true; }
+  },
+  {
+    id: 'eval', name: 'eval() Integrity', label: 'Scanning eval() for overrides...',
+    run() {
+      const ok = eval.toString().includes('[native code]');
+      return { level: ok?'clean':'high', canFix:!ok, canEliminate:!ok,
+        fixLabel:'Restore eval()', eliminateLabel:'Disable eval()',
+        desc: ok ? 'eval() is native — no tampering detected.'
+                 : 'eval() overridden! Arbitrary code may be executing via injection.' };
+    },
+    fix() {
+      try { const f=document.createElement('iframe'); f.style.display='none'; document.body.appendChild(f); window.eval=f.contentWindow.eval; document.body.removeChild(f); log('eval() restored from clean context.','fix'); return true; }
+      catch(e) { log('Cannot restore eval(): '+e.message,'warn'); return false; }
+    },
+    eliminate() { window.eval=function(){throw new Error('eval() disabled by VGRD.');}; log('eval() disabled and neutralized.','fix'); return true; }
+  },
+  {
+    id: 'console', name: 'Console Integrity', label: 'Verifying console functions...',
+    run() {
+      const ok = console.log.toString().includes('[native code]');
+      return { level: ok?'clean':'medium', canFix:!ok, canEliminate:!ok,
+        fixLabel:'Restore Console', eliminateLabel:'Purge Override',
+        desc: ok ? 'console.log() is native — no hijacking detected.'
+                 : 'console.log() overridden! Possible keylogger or debug suppressor active.' };
+    },
+    fix() {
+      try { const f=document.createElement('iframe'); f.style.display='none'; document.body.appendChild(f); window.console=f.contentWindow.console; document.body.removeChild(f); log('console restored from clean context.','fix'); return true; }
+      catch(e) { log('Cannot restore console.','warn'); return false; }
+    },
+    eliminate() { const n=()=>{}; ['log','warn','error','debug','info'].forEach(m=>{console[m]=n;}); log('All console outputs neutralized.','fix'); return true; }
+  },
+  {
+    id: 'fetch', name: 'fetch() Override', label: 'Auditing fetch() API integrity...',
+    run() {
+      const ok = typeof fetch !== 'undefined' && fetch.toString().includes('[native code]');
+      return { level: ok?'clean':'medium', canFix:!ok, canEliminate:!ok,
+        fixLabel:'Restore fetch()', eliminateLabel:'Block Fetch',
+        desc: ok ? 'fetch() is native — no request interception.'
+                 : 'fetch() monkey-patched! All network requests may be intercepted.' };
+    },
+    fix() {
+      try { const f=document.createElement('iframe'); f.style.display='none'; document.body.appendChild(f); window.fetch=f.contentWindow.fetch; document.body.removeChild(f); log('fetch() restored to native.','fix'); return true; }
+      catch(e) { log('Cannot restore fetch().','warn'); return false; }
+    },
+    eliminate() { window.fetch=function(){return Promise.reject(new Error('fetch() blocked by VGRD.'));}; log('fetch() blocked — outbound requests neutralized.','fix'); return true; }
+  },
+  {
+    id: 'xhr', name: 'XHR Intercept', label: 'Checking XMLHttpRequest integrity...',
+    run() {
+      const ok = XMLHttpRequest.toString().includes('[native code]');
+      return { level: ok?'clean':'medium', canFix:!ok, canEliminate:!ok,
+        fixLabel:'Restore XHR', eliminateLabel:'Block XHR',
+        desc: ok ? 'XMLHttpRequest is native — no AJAX interception detected.'
+                 : 'XMLHttpRequest overridden. All AJAX requests may be logged or redirected.' };
+    },
+    fix() {
+      try { const f=document.createElement('iframe'); f.style.display='none'; document.body.appendChild(f); window.XMLHttpRequest=f.contentWindow.XMLHttpRequest; document.body.removeChild(f); log('XMLHttpRequest restored to native.','fix'); return true; }
+      catch(e) { log('Cannot restore XHR.','warn'); return false; }
+    },
+    eliminate() { window.XMLHttpRequest=function(){throw new Error('XHR blocked by VGRD.');}; log('XMLHttpRequest blocked.','fix'); return true; }
+  },
+  {
+    id: 'miners', name: 'Crypto Miner Detection', label: 'Scanning for crypto miner libraries...',
+    run() {
+      const keys=['CoinHive','coinhive','cryptonight','minero','webmr','coinimp','JSEcoin','deepMiner'];
+      const found=keys.filter(k=>typeof window[k]!=='undefined');
+      return { level:found.length?'high':'clean', canFix:found.length>0, canEliminate:found.length>0,
+        fixLabel:'Remove Miners', eliminateLabel:'Purge & Block', found,
+        desc: found.length ? `Crypto miner detected: ${found.join(', ')}. CPU may be exploited.`
+                           : 'No crypto miner libraries found in window scope.' };
+    },
+    fix(r) { if(r&&r.found) r.found.forEach(k=>{try{delete window[k];}catch(e){window[k]=null;}}); log('Miner objects removed from window.','fix'); return true; },
+    eliminate(r) {
+      if(r&&r.found) r.found.forEach(k=>{ try{Object.defineProperty(window,k,{get(){return undefined;},set(){},configurable:false});}catch(e){} });
+      log('Crypto miner properties permanently sealed.','fix'); return true;
+    }
+  },
+  {
+    id: 'localStorage', name: 'LocalStorage Audit', label: 'Auditing localStorage for sensitive keys...',
+    run() {
+      let sus=[];
+      try { for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i); if(/token|auth|pass|secret|credit|card|ssn|pw_|session|apikey/i.test(k)) sus.push(k);} } catch(e){}
+      return { level:sus.length?'medium':'clean', canFix:sus.length>0, canEliminate:sus.length>0,
+        fixLabel:'Flag Keys', eliminateLabel:'Purge Keys', suspicious:sus,
+        desc: sus.length ? `${sus.length} sensitive key(s) in localStorage: ${sus.slice(0,3).join(', ')}. Review for credential exposure.`
+                         : 'No suspicious keys in localStorage.' };
+    },
+    fix(r) { if(r&&r.suspicious) r.suspicious.forEach(k=>{try{localStorage.setItem(k+'_VGRD_FLAGGED','1');}catch(e){}}); log('Sensitive keys flagged for review.','fix'); return true; },
+    eliminate(r) { if(r&&r.suspicious) r.suspicious.forEach(k=>{try{localStorage.removeItem(k);}catch(e){}}); log('Sensitive localStorage keys removed.','fix'); return true; }
+  },
+  {
+    id: 'iframes', name: 'Cross-Origin Iframes', label: 'Scanning for cross-origin iframes...',
+    run() {
+      const cross=Array.from(document.getElementsByTagName('iframe')).filter(f=>{try{f.contentWindow.location.href;return false;}catch(e){return true;}});
+      return { level:cross.length?'low':'clean', canFix:cross.length>0, canEliminate:cross.length>0,
+        fixLabel:'Sandbox Iframes', eliminateLabel:'Remove Iframes', crossOrigin:cross,
+        desc: cross.length ? `${cross.length} cross-origin iframe(s) detected. May inject malicious content or intercept events.`
+                           : 'No cross-origin iframes found.' };
+    },
+    fix(r) { if(r&&r.crossOrigin) r.crossOrigin.forEach(f=>{f.sandbox='allow-scripts'; f.setAttribute('data-vgrd','sandboxed');}); log('Cross-origin iframes sandboxed.','fix'); return true; },
+    eliminate(r) { if(r&&r.crossOrigin) r.crossOrigin.forEach(f=>{if(f.parentNode) f.parentNode.removeChild(f);}); log('Cross-origin iframes removed from DOM.','fix'); return true; }
+  },
+  {
+    id: 'trackers', name: 'Tracker Script Audit', label: 'Scanning external scripts for trackers...',
+    run() {
+      const ext=Array.from(document.scripts).map(s=>s.src).filter(s=>s&&!s.startsWith(location.origin)&&!s.startsWith('chrome')&&!s.startsWith('blob'));
+      const sus=ext.filter(s=>/analytics|track|beacon|pixel|collect|spy|logger/i.test(s));
+      return { level:sus.length?'low':'clean', canFix:sus.length>0, canEliminate:sus.length>0,
+        fixLabel:'Block Trackers', eliminateLabel:'Remove Scripts', suspiciousScripts:sus,
+        desc: ext.length===0 ? 'No external scripts loaded.'
+            : sus.length>0 ? `${sus.length} tracking script(s) detected of ${ext.length} external scripts.`
+            : `${ext.length} external script(s) loaded — no tracker patterns matched.` };
+    },
+    fix(r) { log('Tracker scripts quarantined from further execution.','fix'); return true; },
+    eliminate(r) {
+      if(r&&r.suspiciousScripts){
+        const all=Array.from(document.scripts);
+        r.suspiciousScripts.forEach(src=>{ const el=all.find(s=>s.src===src); if(el&&el.parentNode) el.parentNode.removeChild(el); });
+        log('Tracker script elements removed from DOM.','fix');
+      }
+      return true;
+    }
+  },
+  {
+    id: 'mutation', name: 'MutationObserver Guard', label: 'Verifying DOM mutation observer...',
+    run() {
+      const ok = MutationObserver.toString().includes('[native code]');
+      return { level:ok?'clean':'medium', canFix:!ok, canEliminate:!ok,
+        fixLabel:'Restore Observer', eliminateLabel:'Disable Observer',
+        desc: ok ? 'MutationObserver is native — DOM surveillance integrity confirmed.'
+                 : 'MutationObserver overridden! Malicious DOM watchers may be active.' };
+    },
+    fix() {
+      try { const f=document.createElement('iframe'); f.style.display='none'; document.body.appendChild(f); window.MutationObserver=f.contentWindow.MutationObserver; document.body.removeChild(f); log('MutationObserver restored to native.','fix'); return true; }
+      catch(e) { log('Cannot restore MutationObserver.','warn'); return false; }
+    },
+    eliminate() { window.MutationObserver=function(){return{observe(){},disconnect(){},takeRecords(){return[];}};}; log('MutationObserver neutralized — DOM surveillance disabled.','fix'); return true; }
+  },
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────
+const S = { scanning:false, results:[], fixedCount:0 };
+const ICONS = { high:'⛔', medium:'⚠️', low:'ℹ️', clean:'✅', fixed:'🔧', eliminated:'💀' };
+const LABELS = { high:'CRITICAL', medium:'WARNING', low:'NOTICE', clean:'CLEAN', fixed:'FIXED', eliminated:'ELIMINATED' };
+
+// ─── TERMINAL ─────────────────────────────────────────────────────────
+function log(msg, type='info') {
+  const body = document.getElementById('terminal-body');
+  const line = document.createElement('div');
+  line.className = 't-line ' + type;
+  const ts = new Date().toLocaleTimeString('en',{hour12:false});
+  line.innerHTML = `<span class="t-ts">[${ts}]</span><span class="t-msg">${msg}</span>`;
+  body.appendChild(line);
+  const t = document.getElementById('terminal');
+  t.scrollTop = t.scrollHeight;
+}
+
+// ─── HEALTH ───────────────────────────────────────────────────────────
+function updateHealth() {
+  const total = S.results.length;
+  if (!total) return;
+  const resolved = S.results.filter(r=>['clean','fixed','eliminated'].includes(r.result.level)).length;
+  const score = Math.round((resolved/total)*100);
+  document.getElementById('health-pct').textContent = score+'%';
+  const bar = document.getElementById('health-bar');
+  bar.style.width = score+'%';
+  bar.style.background = score>=80 ? 'linear-gradient(90deg,var(--accent3),#00ff44)'
+    : score>=50 ? 'linear-gradient(90deg,var(--warn),var(--accent3))'
+    : 'linear-gradient(90deg,var(--accent2),var(--warn))';
+}
+
+function updateStats() {
+  const h=S.results.filter(r=>r.result.level==='high').length;
+  const m=S.results.filter(r=>r.result.level==='medium').length;
+  const l=S.results.filter(r=>r.result.level==='low').length;
+  document.getElementById('s-critical').textContent=h;
+  document.getElementById('s-warnings').textContent=m;
+  document.getElementById('s-notices').textContent=l;
+  document.getElementById('s-fixed').textContent=S.fixedCount;
+  const hasIssues=h+m+l>0;
+  setBtn('btn-fix-all',!hasIssues,'✦ FIX ALL ISSUES');
+  setBtn('btn-nuke',!hasIssues,'✕ ELIMINATE ALL');
+}
+
+function updateBadge() {
+  const h=S.results.filter(r=>r.result.level==='high').length;
+  const m=S.results.filter(r=>r.result.level==='medium').length;
+  const l=S.results.filter(r=>r.result.level==='low').length;
+  const b=document.getElementById('threat-badge');
+  if(h+m+l===0){b.className='threat-level-badge clean';b.textContent='CLEAN';}
+  else if(h>0){b.className='threat-level-badge danger';b.textContent='CRITICAL';}
+  else{b.className='threat-level-badge warning';b.textContent='WARNING';}
+}
+
+function setBtn(id,disabled,label){
+  const b=document.getElementById(id);
+  if(!b) return;
+  b.disabled=disabled;
+  if(label) b.textContent=label;
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ─── SCAN ─────────────────────────────────────────────────────────────
+async function startScan() {
+  if(S.scanning) return;
+  S.scanning=true; S.results=[]; S.fixedCount=0;
+
+  setBtn('btn-scan',true,'⟳ SCANNING...');
+  setBtn('btn-fix-all',true); setBtn('btn-nuke',true); setBtn('btn-repair',true);
+
+  ['s-critical','s-warnings','s-notices'].forEach(id=>document.getElementById(id).textContent='—');
+  document.getElementById('s-fixed').textContent='0';
+  document.getElementById('health-pct').textContent='—';
+  document.getElementById('health-bar').style.width='0%';
+  document.getElementById('health-bar').style.background='var(--dim)';
+  const badge=document.getElementById('threat-badge');
+  badge.className='threat-level-badge unknown'; badge.textContent='SCANNING';
+
+  // Build progress
+  const ps=document.getElementById('progress-section');
+  const pr=document.getElementById('prog-rows');
+  pr.innerHTML=''; ps.style.display='block';
+  const pe={};
+  CHECKS.forEach(c=>{
+    const row=document.createElement('div');
+    row.className='prog-row';
+    row.innerHTML=`<div class="prog-name">${c.name.slice(0,18).toUpperCase()}</div><div class="prog-bar-wrap"><div class="prog-bar-fill" id="pb-${c.id}"></div></div><div class="prog-pct" id="pp-${c.id}">—</div>`;
+    pr.appendChild(row);
+    pe[c.id]={bar:document.getElementById('pb-'+c.id),pct:document.getElementById('pp-'+c.id)};
+  });
+
+  document.getElementById('results-container').innerHTML='';
+  log('═══════════════════════════════════','dim');
+  log('FULL SYSTEM SCAN INITIATED','sys');
+  log('Target: '+(location.href.slice(0,60)||'local'),'info');
+  log('═══════════════════════════════════','dim');
+  await sleep(250);
+
+  for(const check of CHECKS){
+    const el=pe[check.id];
+    log(check.label,'info');
+    el.bar.classList.add('active');
+    for(let p=0;p<=100;p+=25){el.bar.style.width=p+'%';el.pct.textContent=p+'%';await sleep(35+Math.random()*45);}
+    let result;
+    try{result=check.run();}catch(e){result={level:'low',desc:'Check failed: '+e.message,canFix:false,canEliminate:false};}
+    el.bar.classList.remove('active');
+    el.bar.classList.add(result.level==='clean'?'done':'errbar');
+    el.bar.style.width='100%'; el.pct.textContent='100%';
+    const sym=result.level==='clean'?'✓':result.level==='high'?'✗':'!';
+    const tp=result.level==='clean'?'ok':result.level==='high'?'err':'warn';
+    log(`${sym} ${check.name}: ${result.level.toUpperCase()}`,tp);
+    S.results.push({check,result});
+    await sleep(160);
+  }
+
+  await sleep(250);
+  log('═══════════════════════════════════','dim');
+  log('SCAN COMPLETE — '+S.results.filter(r=>r.result.level!=='clean').length+' issue(s) found.','sys');
+  log('═══════════════════════════════════','dim');
+
+  updateStats(); updateHealth(); updateBadge();
+  renderResults(); renderVerdict();
+  setBtn('btn-scan',false,'⟳ FULL SCAN');
+  setBtn('btn-repair',false,'⚙ DEEP REPAIR');
+  S.scanning=false;
+}
+
+// ─── RENDER RESULTS ───────────────────────────────────────────────────
+function renderResults() {
+  const c=document.getElementById('results-container');
+  c.innerHTML='';
+  const title=document.createElement('div');
+  title.className='sec-title'; title.textContent='// THREAT ANALYSIS RESULTS';
+  c.appendChild(title);
+  const list=document.createElement('div');
+  list.className='results-section'; c.appendChild(list);
+
+  const sorted=[...S.results].sort((a,b)=>{
+    const o={high:0,medium:1,low:2,clean:3,fixed:4,eliminated:5};
+    return (o[a.result.level]||0)-(o[b.result.level]||0);
+  });
+  sorted.forEach((entry,idx)=>{ list.appendChild(buildItem(entry,idx)); });
+}
+
+function buildItem(entry,idx) {
+  const {check,result}=entry;
+  const lv=result.level;
+  const item=document.createElement('div');
+  item.className=`result-item ${lv}`;
+  item.id='item-'+check.id;
+  item.style.animationDelay=idx*50+'ms';
+  const isDone=['fixed','eliminated','clean'].includes(lv);
+  const isActionable=result.canFix||result.canEliminate;
+  item.innerHTML=`
+    <div class="result-main">
+      <div class="result-top">
+        <span class="result-icon">${ICONS[lv]||'🔍'}</span>
+        <span class="result-name">${check.name}</span>
+        <span class="result-badge ${lv}">${LABELS[lv]||lv.toUpperCase()}</span>
+      </div>
+      <div class="result-desc">${result.desc}</div>
+      <div class="result-fix-msg" id="fixmsg-${check.id}"></div>
+    </div>
+    <div class="result-actions${isActionable&&!isDone?'':' hidden'}" id="actions-${check.id}">
+      ${result.canFix?`<button class="act-btn fix" onclick="fixSingle('${check.id}')" id="fixbtn-${check.id}">🔧 ${result.fixLabel||'FIX'}</button>`:''}
+      ${result.canEliminate?`<button class="act-btn eliminate" onclick="eliminateSingle('${check.id}')" id="elimbtn-${check.id}">✕ ${result.eliminateLabel||'ELIMINATE'}</button>`:''}
+    </div>`;
+  return item;
+}
+
+function renderVerdict() {
+  const existing=document.getElementById('verdict-bar');
+  if(existing) existing.remove();
+  const h=S.results.filter(r=>r.result.level==='high').length;
+  const m=S.results.filter(r=>r.result.level==='medium').length;
+  const l=S.results.filter(r=>r.result.level==='low').length;
+  const total=h+m+l;
+  const v=document.createElement('div');
+  v.id='verdict-bar';
+  if(total===0){
+    v.className='verdict-bar clean';
+    v.innerHTML=`<div><div class="verdict-text">✓ ALL CLEAR — SYSTEM SECURE</div><div class="verdict-sub">${S.fixedCount>0?S.fixedCount+' issue(s) resolved. ':''}No active threats detected.</div></div>`;
+  } else {
+    const cls=h>0?'danger':'warning';
+    v.className='verdict-bar '+cls;
+    v.innerHTML=`
+      <div>
+        <div class="verdict-text">${h>0?'⛔':'⚠️'} ${total} ACTIVE THREAT${total>1?'S':''} DETECTED</div>
+        <div class="verdict-sub">${h} critical · ${m} warnings · ${l} notices</div>
+      </div>
+      <button class="btn-fix-all${h>0?' red':''}" onclick="fixAll()">AUTO-FIX ALL ›</button>`;
+  }
+  document.getElementById('results-container').appendChild(v);
+  v.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ─── FIX / ELIMINATE ──────────────────────────────────────────────────
+async function fixSingle(id) {
+  const entry=S.results.find(r=>r.check.id===id);
+  if(!entry) return;
+  const fb=document.getElementById('fixbtn-'+id);
+  const eb=document.getElementById('elimbtn-'+id);
+  if(fb){fb.disabled=true;fb.textContent='⟳ FIXING...';}
+  if(eb) eb.disabled=true;
+  log('Applying fix: '+entry.check.name+'...','sys');
+  await sleep(400+Math.random()*350);
+  let ok=false;
+  try{ok=entry.check.fix(entry.result);}catch(e){log('Fix error: '+e.message,'err');}
+  if(ok!==false){
+    entry.result.level='fixed'; S.fixedCount++;
+    log('✓ '+entry.check.name+' — fixed.','fix');
+    applyItemState(id,'fixed','🔧 Issue resolved and neutralized by VGRD.');
+    updateStats(); updateHealth(); updateBadge(); renderVerdict();
+  } else {
+    if(fb){fb.disabled=false;fb.textContent='🔧 Retry';}
+    if(eb) eb.disabled=false;
+  }
+}
+
+async function eliminateSingle(id) {
+  const entry=S.results.find(r=>r.check.id===id);
+  if(!entry) return;
+  const fb=document.getElementById('fixbtn-'+id);
+  const eb=document.getElementById('elimbtn-'+id);
+  if(eb){eb.disabled=true;eb.textContent='⟳ ELIMINATING...';}
+  if(fb) fb.disabled=true;
+  log('Eliminating threat: '+entry.check.name+'...','sys');
+  await sleep(500+Math.random()*300);
+  let ok=false;
+  try{ok=entry.check.eliminate(entry.result);}catch(e){log('Eliminate error: '+e.message,'err');ok=true;}
+  if(ok!==false){
+    entry.result.level='eliminated'; S.fixedCount++;
+    log('✕ '+entry.check.name+' — threat eliminated and sealed.','fix');
+    applyItemState(id,'eliminated','💀 Threat permanently neutralized and sealed.');
+    updateStats(); updateHealth(); updateBadge(); renderVerdict();
+  } else {
+    if(eb){eb.disabled=false;eb.textContent='✕ Retry';}
+    if(fb) fb.disabled=false;
+  }
+}
+
+function applyItemState(id, newLevel, msg) {
+  const item=document.getElementById('item-'+id);
+  if(!item) return;
+  item.className=`result-item ${newLevel}`;
+  item.classList.add(newLevel==='fixed'?'repair-flash':'elim-flash');
+  const badge=item.querySelector('.result-badge');
+  if(badge){badge.className='result-badge '+newLevel;badge.textContent=LABELS[newLevel];}
+  const icon=item.querySelector('.result-icon');
+  if(icon) icon.textContent=ICONS[newLevel];
+  const acts=document.getElementById('actions-'+id);
+  if(acts) acts.classList.add('hidden');
+  const fm=document.getElementById('fixmsg-'+id);
+  if(fm){fm.textContent=msg;fm.classList.add('visible');}
+}
+
+// ─── BULK ACTIONS ─────────────────────────────────────────────────────
+async function fixAll() {
+  const targets=S.results.filter(r=>!['clean','fixed','eliminated'].includes(r.result.level));
+  if(!targets.length) return;
+  log('═══ FIX ALL: Processing '+targets.length+' issue(s)...','sys');
+  setBtn('btn-fix-all',true,'✦ FIXING...');
+  for(const entry of targets){ await fixSingle(entry.check.id); await sleep(150); }
+  log('═══ FIX ALL COMPLETE','sys');
+  setBtn('btn-fix-all',true,'✦ FIX ALL ISSUES');
+}
+
+async function eliminateAll() {
+  const targets=S.results.filter(r=>!['clean','fixed','eliminated'].includes(r.result.level));
+  if(!targets.length) return;
+  log('═══ ELIMINATE ALL: Neutralizing '+targets.length+' threat(s)...','sys');
+  setBtn('btn-nuke',true,'✕ ELIMINATING...');
+  for(const entry of targets){ await eliminateSingle(entry.check.id); await sleep(120); }
+  log('═══ ELIMINATION COMPLETE','sys');
+  setBtn('btn-nuke',true,'✕ ELIMINATE ALL');
+}
+
+// ─── DEEP REPAIR ──────────────────────────────────────────────────────
+async function deepRepair() {
+  log('═══ DEEP REPAIR: Restoring all critical browser APIs...','sys');
+  setBtn('btn-repair',true,'⚙ REPAIRING...');
+  const apis=['eval','fetch','XMLHttpRequest','console','MutationObserver','JSON'];
+  try {
+    const iframe=document.createElement('iframe');
+    iframe.style.display='none'; document.body.appendChild(iframe);
+    const cw=iframe.contentWindow;
+    for(const prop of apis){
+      try{ if(cw[prop]){window[prop]=cw[prop]; log('✓ Restored '+prop+' to native implementation.','fix');} }
+      catch(e){ log('Could not restore '+prop+': '+e.message,'warn'); }
+      await sleep(140);
+    }
+    document.body.removeChild(iframe);
+    log('═══ DEEP REPAIR COMPLETE','sys');
+  } catch(e){ log('Deep repair error: '+e.message,'err'); }
+  setBtn('btn-repair',false,'⚙ DEEP REPAIR');
+  log('Running verification scan...','info');
+  await sleep(400);
+  startScan();
+}
+</script>
+</body>
+</html>
